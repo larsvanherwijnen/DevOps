@@ -1,0 +1,66 @@
+services:
+  api:
+    build: 
+      context: ./api
+      dockerfile: ${DOCKER_FILE:-Dockerfile}
+    ports:
+      - "3000:3000"
+    environment:
+      - MONGO_URL=mongodb://api_user:password@mongodb-api:27017/api_db
+      - MESSAGE_QUEUE_URL=amqp://rabbitmq:5672
+    depends_on:
+      - mongodb-api
+      - rabbitmq
+
+  service-b:
+    build: ./service-b
+    environment:
+      - MONGO_URL=mongodb://service_b_user:password@mongodb-service-b:27017/service_b_db
+      - MESSAGE_QUEUE_URL=amqp://rabbitmq:5672
+    depends_on:
+      - mongodb-service-b
+      - rabbitmq
+
+  mongodb-api:
+    image: mongo:6.0
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=api_user
+      - MONGO_INITDB_ROOT_PASSWORD=password
+    volumes:
+      - api-db-data:/data/db
+
+  mongodb-service-b:
+    image: mongo:6.0
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=service_b_user
+      - MONGO_INITDB_ROOT_PASSWORD=password
+    volumes:
+      - service-b-db-data:/data/db
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "15672:15672"
+
+  prometheus:
+    image: prom/prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus:/etc/prometheus
+      - prometheus-data:/prometheus
+
+  grafana:
+    image: grafana/grafana
+    ports:
+      - "3001:3000"
+    depends_on:
+      - prometheus
+    volumes:
+      - grafana-data:/var/lib/grafana
+
+volumes:
+  api-db-data:
+  service-b-db-data:
+  prometheus-data:
+  grafana-data:
