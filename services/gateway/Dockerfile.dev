@@ -1,0 +1,14 @@
+FROM node:18-alpine
+
+WORKDIR /app
+
+# Install nodemon for development
+RUN npm install -g nodemon
+
+COPY package*.json ./
+
+RUN npm install
+
+EXPOSE ${GATEWAY_PORT:-3000}
+
+CMD ["nodemon", "--legacy-watch", "src/index.js"]

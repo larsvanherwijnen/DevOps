@@ -1,0 +1,13 @@
+FROM node:18-alpine
+
+WORKDIR /app
+
+RUN npm install -g nodemon
+
+COPY package*.json ./
+
+RUN npm install
+
+EXPOSE ${SERVICE_A_PORT:-3001}
+
+CMD ["nodemon", "--legacy-watch", "src/index.js"]

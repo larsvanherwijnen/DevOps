@@ -1,66 +1,115 @@
 services:
-  api:
-    build: 
-      context: ./api
-      dockerfile: ${DOCKER_FILE:-Dockerfile}
+  service-a-mongodb:
+    image: mongo:${MONGO_VERSION:-latest}
+    container_name: ${COMPOSE_PROJECT_NAME:-devops}-service-a-mongodb
     ports:
-      - "3000:3000"
-    environment:
-      - MONGO_URL=mongodb://api_user:password@mongodb-api:27017/api_db
-      - MESSAGE_QUEUE_URL=amqp://rabbitmq:5672
-    depends_on:
-      - mongodb-api
-      - rabbitmq
-
-  service-b:
-    build: ./service-b
-    environment:
-      - MONGO_URL=mongodb://service_b_user:password@mongodb-service-b:27017/service_b_db
-      - MESSAGE_QUEUE_URL=amqp://rabbitmq:5672
-    depends_on:
-      - mongodb-service-b
-      - rabbitmq
-
-  mongodb-api:
-    image: mongo:6.0
-    environment:
-      - MONGO_INITDB_ROOT_USERNAME=api_user
-      - MONGO_INITDB_ROOT_PASSWORD=password
+      - "${MONGO_A_PORT:-27017}:27017"
     volumes:
-      - api-db-data:/data/db
+      - mongodb-service-a-data:/data/db
+    networks:
+      - app-network
 
-  mongodb-service-b:
-    image: mongo:6.0
-    environment:
-      - MONGO_INITDB_ROOT_USERNAME=service_b_user
-      - MONGO_INITDB_ROOT_PASSWORD=password
+  service-b-mongodb:
+    image: mongo:${MONGO_VERSION:-latest}
+    container_name: ${COMPOSE_PROJECT_NAME:-devops}-service-b-mongodb
+    ports:
+      - "${MONGO_B_PORT:-27018}:27017"
     volumes:
-      - service-b-db-data:/data/db
+      - mongodb-service-b-data:/data/db
+    networks:
+      - app-network
 
   rabbitmq:
-    image: rabbitmq:3-management
+    image: rabbitmq:${RABBITMQ_VERSION:-3-management}
+    container_name: ${COMPOSE_PROJECT_NAME:-devops}-rabbitmq
     ports:
-      - "15672:15672"
-
-  prometheus:
-    image: prom/prometheus
-    ports:
-      - "9090:9090"
+      - "${RABBITMQ_PORT:-5672}:5672"
+      - "${RABBITMQ_MANAGEMENT_PORT:-15672}:15672"
+    environment:
+      - RABBITMQ_DEFAULT_USER=${MQ_USERNAME:-guest}
+      - RABBITMQ_DEFAULT_PASS=${MQ_PASSWORD:-guest}
     volumes:
-      - ./prometheus:/etc/prometheus
-      - prometheus-data:/prometheus
+      - rabbitmq-data:/var/lib/rabbitmq
+    networks:
+      - app-network
 
-  grafana:
-    image: grafana/grafana
+  api-gateway:
+    build:
+      context: ./services/gateway
+      dockerfile: ${DOCKERFILE:-Dockerfile.dev}
+    container_name: ${COMPOSE_PROJECT_NAME:-devops}-gateway
+    volumes:
+      - ./services/gateway:/app
     ports:
-      - "3001:3000"
+      - "${GATEWAY_PORT:-3000}:3000"
+    environment:
+      - NODE_ENV=${NODE_ENV:-development}
+      - PORT=${GATEWAY_PORT:-3000}
+      - MQ_HOST=${MQ_HOST:-rabbitmq}
+      - MQ_PORT=${MQ_PORT:-5672}
+      - MQ_USERNAME=${MQ_USERNAME:-guest}
+      - MQ_PASSWORD=${MQ_PASSWORD:-guest}
+      - SERVICE_A_URL=http://service-a:${SERVICE_A_PORT:-3001}
+      - SERVICE_B_URL=http://service-b:${SERVICE_B_PORT:-3002}
     depends_on:
-      - prometheus
+      - service-a
+      - service-b
+    networks:
+      - app-network
+
+  service-a:
+    build:
+      context: ./services/service-a
+      dockerfile: ${DOCKERFILE:-Dockerfile.dev}
+    container_name: ${COMPOSE_PROJECT_NAME:-devops}-service-a
     volumes:
-      - grafana-data:/var/lib/grafana
+      - ./services/service-a:/app
+    ports:
+      - "${SERVICE_A_PORT:-3001}:3001"
+    environment:
+      - NODE_ENV=${NODE_ENV:-development}
+      - PORT=${SERVICE_A_PORT:-3001}
+      - MONGO_URL=mongodb://service-a-mongodb:27017/shop
+      - MQ_HOST=${MQ_HOST:-rabbitmq}
+      - MQ_PORT=${MQ_PORT:-5672}
+      - MQ_USERNAME=${MQ_USERNAME:-guest}
+      - MQ_PASSWORD=${MQ_PASSWORD:-guest}
+    depends_on:
+      - service-a-mongodb
+      - rabbitmq
+    networks:
+      - app-network
+
+  service-b:
+    build:
+      context: ./services/service-b
+      dockerfile: ${DOCKERFILE:-Dockerfile.dev}
+    container_name: ${COMPOSE_PROJECT_NAME:-devops}-service-b
+    volumes:
+      - ./services/service-b:/app
+    ports:
+      - "${SERVICE_B_PORT:-3002}:3002"
+    environment:
+      - NODE_ENV=${NODE_ENV:-development}
+      - PORT=${SERVICE_B_PORT:-3002}
+      - MONGO_URL=mongodb://service-a-mongodb:27017/tracking
+      - MQ_HOST=${MQ_HOST:-rabbitmq}
+      - MQ_PORT=${MQ_PORT:-5672}
+      - MQ_USERNAME=${MQ_USERNAME:-guest}
+      - MQ_PASSWORD=${MQ_PASSWORD:-guest}
+    depends_on:
+      - service-b-mongodb
+      - rabbitmq
+    networks:
+      - app-network
+
 
 volumes:
-  api-db-data:
-  service-b-db-data:
-  prometheus-data:
-  grafana-data:
+  mongodb-service-a-data:
+  mongodb-service-b-data:
+  rabbitmq-data:
+
+
+networks:
+  app-network:
+    driver: bridge
