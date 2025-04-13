@@ -1,4 +1,4 @@
-const { generateTrackingNumber } = require('../utils/trackingNumber');
+const { generateTrackingNumber } = require("../utils/trackingNumber");
 
 describe("generateTrackingNumber", () => {
   it("should generate a tracking number with the correct format", () => {
