@@ -33,29 +33,29 @@ services:
     networks:
       - app-network
 
-  api-gateway:
-    build:
-      context: ./services/gateway
-      dockerfile: ${DOCKERFILE:-Dockerfile.dev}
-    container_name: ${COMPOSE_PROJECT_NAME:-devops}-gateway
-    volumes:
-      - ./services/gateway:/app
-    ports:
-      - "${GATEWAY_PORT:-3000}:3000"
-    environment:
-      - NODE_ENV=${NODE_ENV:-development}
-      - PORT=${GATEWAY_PORT:-3000}
-      - MQ_HOST=${MQ_HOST:-rabbitmq}
-      - MQ_PORT=${MQ_PORT:-5672}
-      - MQ_USERNAME=${MQ_USERNAME:-guest}
-      - MQ_PASSWORD=${MQ_PASSWORD:-guest}
-      - SERVICE_A_URL=http://service-a:${SERVICE_A_PORT:-3001}
-      - SERVICE_B_URL=http://service-b:${SERVICE_B_PORT:-3002}
-    depends_on:
-      - service-a
-      - service-b
-    networks:
-      - app-network
+  # api-gateway:
+  #   build:
+  #     context: ./services/gateway
+  #     dockerfile: ${DOCKERFILE:-Dockerfile.dev}
+  #   container_name: ${COMPOSE_PROJECT_NAME:-devops}-gateway
+  #   volumes:
+  #     - ./services/gateway:/app
+  #   ports:
+  #     - "${GATEWAY_PORT:-3000}:3000"
+  #   environment:
+  #     - NODE_ENV=${NODE_ENV:-development}
+  #     - PORT=${GATEWAY_PORT:-3000}
+  #     - MQ_HOST=${MQ_HOST:-rabbitmq}
+  #     - MQ_PORT=${MQ_PORT:-5672}
+  #     - MQ_USERNAME=${MQ_USERNAME:-guest}
+  #     - MQ_PASSWORD=${MQ_PASSWORD:-guest}
+  #     - SERVICE_A_URL=http://service-a:${SERVICE_A_PORT:-3001}
+  #     - SERVICE_B_URL=http://service-b:${SERVICE_B_PORT:-3002}
+  #   depends_on:
+  #     - service-a
+  #     - service-b
+  #   networks:
+  #     - app-network
 
   service-a:
     build:
@@ -111,6 +111,14 @@ services:
     ports:
       - "9090:9090"
     command: --web.enable-lifecycle --config.file=/etc/prometheus/prometheus.yml
+    networks:
+      - app-network
+
+  grafana:
+    build:
+      context: ./grafana
+    ports:
+      - "3000:3000"
     networks:
       - app-network
 
