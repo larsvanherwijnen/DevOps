@@ -23,13 +23,13 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci
+        run: npm i
         working-directory: ./services/service-a
 
       - name: Run tests
         run: npm test
         working-directory: ./services/service-a
-        
+
       - name: Run ESLint
         run: npm run lint
         working-directory: ./services/service-a
