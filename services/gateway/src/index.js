@@ -1,7 +1,7 @@
-const express = require('express');
-const cors = require('cors');
-const { createProxyMiddleware } = require('http-proxy-middleware');
-const promBundle = require('express-prom-bundle');
+const express = require("express");
+const cors = require("cors");
+const { createProxyMiddleware } = require("http-proxy-middleware");
+const promBundle = require("express-prom-bundle");
 
 // Initialize express app
 const app = express();
@@ -27,7 +27,7 @@ app.use(express.json()); // Ensure this middleware is applied before proxying
 const debugLog = (req, res, next) => {
   console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
   if (req.body) {
-    console.log('Request Body:', JSON.stringify(req.body, null, 2));
+    console.log("Request Body:", JSON.stringify(req.body, null, 2));
   }
   next();
 };
@@ -35,27 +35,27 @@ const debugLog = (req, res, next) => {
 app.use(debugLog);
 
 // Health check endpoint
-app.get('/health', (req, res) => {
-  res.status(200).json({ status: 'healthy' });
+app.get("/health", (req, res) => {
+  res.status(200).json({ status: "healthy" });
 });
 
 const proxyOptions = {
   secure: false,
   ws: true,
-  logLevel: 'debug',
+  logLevel: "debug",
   changeOrigin: true,
   onProxyReq: (proxyReq, req, res) => {
-      if (req.body && req.method === 'POST') {
+      if (req.body && req.method === "POST") {
           const bodyData = JSON.stringify(req.body);
-          proxyReq.setHeader('Content-Type', 'application/json');
-          proxyReq.setHeader('Content-Length', Buffer.byteLength(bodyData));
+          proxyReq.setHeader("Content-Type", "application/json");
+          proxyReq.setHeader("Content-Length", Buffer.byteLength(bodyData));
           proxyReq.write(bodyData);
       }
   },
   onError: (err, req, res) => {
-      console.error('Proxy Error:', err);
+      console.error("Proxy Error:", err);
       res.status(500).json({
-          error: 'Proxy Error',
+          error: "Proxy Error",
           message: err.message,
       });
   },
@@ -64,23 +64,23 @@ const proxyOptions = {
 
 // Route to Service A
 app.use(
-  '/api/service-a',
+  "/api/service-a",
   createProxyMiddleware({
-    target: process.env.SERVICE_A_URL || 'http://service-a:3001',
-    pathRewrite: { '^/api/service-a': '/api' },
+    target: process.env.SERVICE_A_URL || "http://service-a:3001",
+    pathRewrite: { "^/api/service-a": "/api" },
     ...proxyOptions,
   })
 );
 
-app.use('/api/test', createProxyMiddleware({
-  target: 'http://service-a:3001',
+app.use("/api/test", createProxyMiddleware({
+  target: "http://service-a:3001",
   changeOrigin: true,
   onProxyReq: (proxyReq, req) => {
-      if (req.body && req.method === 'POST') {
+      if (req.body && req.method === "POST") {
           const bodyData = JSON.stringify(req.body);
-          console.log('Forwarding body:', bodyData);
-          proxyReq.setHeader('Content-Type', 'application/json');
-          proxyReq.setHeader('Content-Length', Buffer.byteLength(bodyData));
+          console.log("Forwarding body:", bodyData);
+          proxyReq.setHeader("Content-Type", "application/json");
+          proxyReq.setHeader("Content-Length", Buffer.byteLength(bodyData));
           proxyReq.write(bodyData);
       }
   },
@@ -88,19 +88,19 @@ app.use('/api/test', createProxyMiddleware({
 
 // Route to Service B
 app.use(
-  '/api/service-b',
+  "/api/service-b",
   createProxyMiddleware({
-    target: process.env.SERVICE_B_URL || 'http://service-b:3002',
-    pathRewrite: { '^/api/service-b': '/api' },
+    target: process.env.SERVICE_B_URL || "http://service-b:3002",
+    pathRewrite: { "^/api/service-b": "/api" },
     ...proxyOptions,
   })
 );
 
 // Error handling middleware
 app.use((err, req, res, next) => {
-  console.error('Error:', err);
+  console.error("Error:", err);
   res.status(500).json({
-    error: 'Internal Server Error',
+    error: "Internal Server Error",
     message: err.message,
   });
 });
@@ -108,8 +108,8 @@ app.use((err, req, res, next) => {
 // Start server
 app.listen(port, () => {
   console.log(`API Gateway running on port ${port}`);
-  console.log(`Service A proxy: ${process.env.SERVICE_A_URL || 'http://service-a:3001'}`);
-  console.log(`Service B proxy: ${process.env.SERVICE_B_URL || 'http://service-b:3002'}`);
+  console.log(`Service A proxy: ${process.env.SERVICE_A_URL || "http://service-a:3001"}`);
+  console.log(`Service B proxy: ${process.env.SERVICE_B_URL || "http://service-b:3002"}`);
 });
 
 module.exports = app; // For testing
