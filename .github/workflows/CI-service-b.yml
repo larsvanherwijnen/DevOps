@@ -3,10 +3,11 @@ name: CI - Service B
 on:
   push:
     paths:
-      - 'services/service-a/**'
+      - 'services/service-b/**'
   pull_request:
     branches:
       - main
+  workflow_dispatch: 
 
 jobs:
   test:
@@ -20,7 +21,6 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: '18'
-          cache: 'npm'
 
       - name: Install dependencies
         run: npm i
