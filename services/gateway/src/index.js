@@ -8,14 +8,13 @@ const app = express();
 const port = process.env.PORT || 3000;
 
 // Prometheus metrics middleware
-const metricsMiddleware = promBundle({
-  includeMethod: true,
+const metricsMiddleware = promBundle({ 
   includePath: true,
+  includeStatusCode: true,
+  normalizePath: true,
   promClient: {
-    collectDefaultMetrics: {
-      timeout: 5000,
-    },
-  },
+    collectDefaultMetrics: {},
+  }
 });
 
 // Middleware
@@ -33,11 +32,6 @@ const debugLog = (req, res, next) => {
 };
 
 app.use(debugLog);
-
-// Health check endpoint
-app.get("/health", (req, res) => {
-  res.status(200).json({ status: "healthy" });
-});
 
 const proxyOptions = {
   secure: false,

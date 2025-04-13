@@ -3,6 +3,7 @@ const mongoose = require("mongoose");
 const amqp = require("amqplib");
 const dotenv = require("dotenv");
 const cors = require("cors");
+const promBundle = require("express-prom-bundle");
 
 const Product = require("./models/Product");
 const Order = require("./models/Order");
@@ -30,6 +31,16 @@ async function connectRabbit() {
   await channel.assertQueue(QUEUE_NAME);
 }
 connectRabbit();
+
+const metricsMiddleware = promBundle({ 
+  includePath: true,
+  includeStatusCode: true,
+  normalizePath: true,
+  promClient: {
+    collectDefaultMetrics: {},
+  }
+});
+app.use(metricsMiddleware);
 
 // GET /products
 app.get("/products", async (req, res) => {

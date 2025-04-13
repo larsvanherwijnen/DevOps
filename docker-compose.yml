@@ -103,6 +103,19 @@ services:
     networks:
       - app-network
 
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: ${COMPOSE_PROJECT_NAME:-devops}-prometheus
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+    command: --web.enable-lifecycle --config.file=/etc/prometheus/prometheus.yml
+    networks:
+      - app-network
+
+
+
 
 volumes:
   mongodb-service-a-data:

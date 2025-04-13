@@ -4,6 +4,7 @@ const amqp = require("amqplib");
 const dotenv = require("dotenv");
 const cors = require("cors");
 const { generateTrackingNumber } = require("../utils/trackingNumber");
+const promBundle = require("express-prom-bundle");
 
 const Tracking = require("./models/Tracking");
 
@@ -35,6 +36,16 @@ async function connectRabbit() {
   });
 }
 connectRabbit();
+
+const metricsMiddleware = promBundle({ 
+  includePath: true,
+  includeStatusCode: true,
+  normalizePath: true,
+  promClient: {
+    collectDefaultMetrics: {},
+  }
+});
+app.use(metricsMiddleware);
 
 // GET /tracking/:orderId
 app.get("/tracking/:orderId", async (req, res) => {

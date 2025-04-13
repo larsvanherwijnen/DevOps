@@ -1,0 +1,12 @@
+groups: 
+  - name: DemoAlert
+    rules: 
+      - alert: "On Service Down Gateway"
+        expr: up{job="Gateway"} == 0
+        for: 30s
+      - alert: "On Service Down Service A"
+        expr: up{job="service-a"} == 0
+        for: 30s
+      - alert: "On Service Down Service B"
+        expr: up{job="service-b"} == 0
+        for: 30s
